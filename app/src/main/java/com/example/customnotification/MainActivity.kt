@@ -16,12 +16,15 @@ import androidx.core.app.NotificationManagerCompat
 class MainActivity : AppCompatActivity() {
 
     private var CHANNEL_ID = "notification"
+    lateinit var notificationManager: NotificationManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        CreateNotificationChannel()
+        notificationManager  = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        createNotificationChannel()
         val notificationLayout = RemoteViews(packageName, R.layout.custom_notification)
         val intent = Intent(this, NewActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT)
@@ -32,17 +35,28 @@ class MainActivity : AppCompatActivity() {
                 .setCustomContentView(notificationLayout)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
+                .setDeleteIntent(pendingIntent)
                 .setAutoCancel(true)
 
-        val notify_btn = findViewById<Button>(R.id.notify_btn)
-        notify_btn.setOnClickListener {
+        val notifyBtn = findViewById<Button>(R.id.notify_btn)
+        notifyBtn.setOnClickListener {
             with(NotificationManagerCompat.from(this)) {
                 notify(0, builder.build())
             }
         }
     }
 
-    private fun CreateNotificationChannel() {
+    override fun onStop() {
+        super.onStop()
+        notificationManager.cancel(0)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        notificationManager.cancel(0)
+    }
+
+    private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "App Notification"
             val descriptionText = "Description of Notification"
@@ -50,7 +64,6 @@ class MainActivity : AppCompatActivity() {
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
             }
-            val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
